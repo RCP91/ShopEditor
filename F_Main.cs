@@ -7,6 +7,7 @@
  * MIT License.
  */
 
+using Newtonsoft.Json.Linq;
 using ShopEditorPro;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace ShopEditor
 {
@@ -25,11 +27,13 @@ namespace ShopEditor
     {
         List<string> offerTypes = new List<string>();
         ShopEditorPro.ShopEditorPro shopEditor = new ShopEditorPro.ShopEditorPro();
-        string endl = System.Environment.NewLine;
+
+        public static F_Main Instance;
         public F_Main()
         {
             Config.Load();
             InitializeComponent();
+            Instance = this;
 
             shopEditor = new ShopEditorPro.ShopEditorPro();
 
@@ -40,48 +44,76 @@ namespace ShopEditor
             offerTypes = new List<string>(Config.Current.OfferTypeList ?? new List<string> { "Item", "Outfit" });
             cb_offerType.Items.Clear();
             cb_offerType.Items.AddRange(offerTypes.ToArray());
+            dgv_load();
 
-            if (File.Exists(Config.Current.PathItemServer))
+            if (!File.Exists(Config.Current.PathItemServer))
             {
-                tb_display.Text = "";
-                tb_display.Text += ($"Loading items.srv!{endl}");
-                shopEditor.LoadItemIds(tb_pathItemServer.Text);
-
-                foreach (var item in shopEditor.ItemNameToId)
-                {
-                    tb_display.Text += ($"-> {item.Key.ToString()}:::{item.Value.ToString()}{endl}");
-                }
+                Msg.Error("items.srv file not found! Please configure the correct path in the configuration menu.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             LoadShopItemsServer();
         }
-        void LoadShopItemsServer()
+        async void LoadShopItemsServer(bool force = false)
         {
-            if (!File.Exists(Config.Current.ServerFilePath))
+            tb_display.Text = "";
+            Msg.Log($":: Loading items.srv!");
+
+            await RunProgress(progressBar1);
+            if (!force)
             {
-                Msg.Error("Server file not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                shopEditor.LoadItemServer(tb_pathItemServer.Text);
             }
 
-            tb_display.Text += ($"Loading shop items!{endl}");
-            shopEditor.LoadServer(Config.Current.ServerFilePath);
-            dgv_load();
-
-            foreach (var item in shopEditor.Categories.ToList())
+            if (Config.Current.AutoLoadLastFile || force)
             {
-                foreach (var outfit in item.Outfits)
-                    tb_display.Text += ($"{outfit.Title}:::{outfit.LookType}{endl}");
-                foreach (var it in item.Items)
-                    tb_display.Text += ($"{it.Name}:::{it.ItemId} {endl}");
+                Msg.Log($":: Loading shop items!");
+                string path = (force) ? tb_pathServer.Text : Config.Current.ServerFilePath;
+                shopEditor.LoadShopServer(path);
+
+                dgv_load();
+
+                foreach (var item in shopEditor.Categories.ToList())
+                {
+                    foreach (var outfit in item.Outfits)
+                        Msg.Log($"::: {outfit.Title}::Type:{outfit.LookType}");
+
+                    foreach (var it in item.Items)
+                        Msg.Log($"::: {it.Name}::ID: {it.ItemId}");
+                }
             }
         }
+        public async Task RunProgress(System.Windows.Forms.ProgressBar bar)
+        {
+            bar.Visible = true;
+            bar.Maximum = 20;
+
+            int stap = 0;
+
+            for (bar.Value = 1; bar.Value < bar.Maximum; bar.Value++)
+            {
+                if (bar.Value != stap)
+                {
+                    stap = bar.Value;
+                    await Task.Delay(10);
+                }
+            }
+
+            var t = new Timer { Interval = 1500 };
+            t.Tick += (_, __) =>
+            {
+                bar.Visible = false;
+                t.Stop();
+            };
+            t.Start();
+        }
+
         void dgv_load()
         {
-            //dgv_main.Rows.Clear();
+            dgv_main.Rows.Clear();
 
             if (shopEditor?.Categories == null) return;
 
-            var categoryNames = shopEditor.Categories.Select(c => c.Name).ToArray();
             //(dgv_main.Columns["dgv_cb_category"] as DataGridViewComboBoxColumn).Items.Clear();
+            var categoryNames = shopEditor.Categories.Select(c => c.Name).ToArray();
             (dgv_main.Columns["dgv_cb_category"] as DataGridViewComboBoxColumn).Items.AddRange(categoryNames);
 
             //(dgv_main.Columns["dgv_cb_offerType"] as DataGridViewComboBoxColumn).Items.Clear();
@@ -126,8 +158,7 @@ namespace ShopEditor
         }
         void SaveDgvToShopEditor()
         {
-            //shopEditor.Categories.Clear();
-
+            shopEditor.Categories.Clear();
             var grouped = dgv_main.Rows
                 .Cast<DataGridViewRow>()
                 .Where(r => !r.IsNewRow && r.Cells["dgv_cb_category"].Value != null)
@@ -144,16 +175,15 @@ namespace ShopEditor
 
                 var category = new ShopCategory
                 {
+                    Order = shopEditor.Categories.Count + 1,
                     Name = catName,
                     //IsOutfit = isOutfit
                 };
 
                 if (isOutfit)
                 {
-
                     foreach (var row in group)
                     {
-
                         category.LookIco = Convert.ToUInt16(row.Cells["dgv_ico_type"].Value);
                         var outfit = new ShopOutfit
                         {
@@ -161,16 +191,12 @@ namespace ShopEditor
                             Price = Convert.ToInt32(row.Cells["dgv_price"].Value),
                             Title = row.Cells["dgv_title"].Value?.ToString() ?? ""
                         };
-
                         string sexStr = row.Cells["dgv_count_sex"].Value?.ToString()?.ToLower();
-                        if (sexStr == "female") outfit.Sex = 0;
-                        else if (sexStr == "male") outfit.Sex = 1;
-                        else outfit.Sex = null;
-
+                        outfit.Sex = (sexStr == "female") ? 0 : ((sexStr == "male") ? 1 : outfit.Sex = null);
                         category.Outfits.Add(outfit);
                     }
                 }
-                else
+                else if (!isOutfit)
                 {
                     category.IconItemName = dgv_ico_type.ToString();
 
@@ -190,7 +216,6 @@ namespace ShopEditor
                         category.Items.Add(item);
                     }
                 }
-
                 shopEditor.Categories.Add(category);
             }
             shopEditor.ResolveItemId();
@@ -281,6 +306,7 @@ namespace ShopEditor
         private void tb_pathItemServer_DoubleClick(object sender, EventArgs e)
         {
             DialogResult res = openFileDialog1.ShowDialog();
+            Msg.Log(":: Select items.srv file path");
             if (res == DialogResult.OK)
             {
                 tb_pathItemServer.Text = openFileDialog1.FileName;
@@ -290,12 +316,15 @@ namespace ShopEditor
         {
             bool pathOk1 = false;
             bool pathOk2 = false;
+            Msg.Log(":: Replace or save like file shop_items.lua");
             DialogResult serv = saveFileDialog1.ShowDialog();
             if (serv == DialogResult.OK)
             {
                 tb_pathServer.Text = saveFileDialog1.FileName;
                 pathOk1 = true;
             }
+
+            Msg.Log(":: Replace or save like file shop_items_client.lua");
             DialogResult client = saveFileDialog1.ShowDialog();
             if (client == DialogResult.OK)
             {
@@ -307,18 +336,19 @@ namespace ShopEditor
                 SaveDgvToShopEditor();
                 if (shopEditor.Save(tb_pathServer.Text, tb_pathClient.Text))
                 {
-                    Msg.Info("Files saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    Msg.Log("Files saved successfully!");
                 }
             }
         }
         private void loadFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             tb_pathServer_MouseClick(sender, null);
-            LoadShopItemsServer();
+            LoadShopItemsServer(true);
         }
     }
-    static class Msg
+    class Msg
     {
+        public static string endl = System.Environment.NewLine;
         public static void Warning(string message, string caption = "Shop Editor Pro", MessageBoxButtons buttons = MessageBoxButtons.OK, MessageBoxIcon icon = MessageBoxIcon.Warning)
         {
             MessageBox.Show(message, caption, buttons, icon);
@@ -334,6 +364,13 @@ namespace ShopEditor
         public static DialogResult Info(string message, string caption = "Shop Editor Pro", MessageBoxButtons buttons = MessageBoxButtons.OK, MessageBoxIcon icon = MessageBoxIcon.Information)
         {
             return MessageBox.Show(message, caption, buttons, icon);
+        }
+        public static void Log(string message)
+        {
+            var instance = F_Main.Instance;
+            instance.tb_display.Text += message + endl;
+            instance.tb_display.SelectionStart = instance.tb_display.Text.Length;
+            instance.tb_display.ScrollToCaret();
         }
     }
     internal static class Program
