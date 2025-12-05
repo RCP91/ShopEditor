@@ -24,6 +24,7 @@ namespace ShopEditorPro
     }
     public class ShopCategory
     {
+        public int Order { get; set; } = 0;
         public string Name { get; set; } = "";
         public string IconItemName { get; set; } = "";
         public int IconItemId { get; set; } = 0;
@@ -36,7 +37,7 @@ namespace ShopEditorPro
     {
         public List<ShopCategory> Categories { get; } = new List<ShopCategory>();
         public Dictionary<string, int> ItemNameToId = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        public void LoadItemIds(string itemsSrvPath)
+        public void LoadItemServer(string itemsSrvPath)
         {
             if (!File.Exists(itemsSrvPath)) return;
 
@@ -44,11 +45,14 @@ namespace ShopEditorPro
             var lines = File.ReadAllLines(itemsSrvPath);
             string currentName = "";
             int currentId = 0;
+            bool takeFlag = false;
 
             foreach (var line in lines)
             {
                 var l = line.Trim();
-
+                
+                if (l.Contains("Flags"))
+                    takeFlag = l.Contains("Take");
                 var idMatch = Regex.Match(l, @"TypeID\s*=\s*(\d+)");
                 if (idMatch.Success)
                     currentId = int.Parse(idMatch.Groups[1].Value);
@@ -57,7 +61,7 @@ namespace ShopEditorPro
                 if (nameMatch.Success)
                 {
                     currentName = nameMatch.Groups[1].Value.Trim();
-                    if (currentId > 0 && !string.IsNullOrEmpty(currentName))
+                    if (currentId > 0 && !string.IsNullOrEmpty(currentName) && takeFlag)
                     {
                         // Remove "a " ou "an "
                         var cleanName = currentName;
@@ -73,10 +77,10 @@ namespace ShopEditorPro
                 }
             }
         }
-        public void LoadServer(string path)
+        public void LoadShopServer(string path)
         {
             if (!File.Exists(path)) path = Config.Current.ServerFilePath;
-            if (!File.Exists(path)) throw new FileNotFoundException("shop_items.lua não encontrado!", path);
+            if (!File.Exists(path)) throw new FileNotFoundException("Config auto load file: shop_items.lua not found!", path);
 
             Categories.Clear();
             var text = File.ReadAllText(path);
@@ -106,10 +110,10 @@ namespace ShopEditorPro
                 }
             }
         }
-        public bool Save(string serverPath = null, string clientPath = null)
+        public bool Save(string serverPath = "", string clientPath = "")
         {
-            serverPath = Config.Current.ServerFilePath;
-            clientPath = Config.Current.ClientFilePath;
+            serverPath = (serverPath != string.Empty) ? serverPath : Config.Current.ServerFilePath;
+            clientPath = (clientPath != string.Empty) ? clientPath : Config.Current.ClientFilePath;
 
             ResolveItemId();
             SaveServer(serverPath);
@@ -121,7 +125,8 @@ namespace ShopEditorPro
             var lines = new List<string> { "return {" };
             foreach (var cat in Categories)
             {
-                lines.Add($"    [\"{cat.Name}\"] = {{");
+                lines.Add($"    [{cat.Order}] = {{");
+                lines.Add($"        category = \"{cat.Name}\",");
                 if (cat.IsOutfit)
                 {
                     if (cat.LookIco.HasValue) lines.Add($"        lookIco = {cat.LookIco.Value},");
@@ -147,7 +152,9 @@ namespace ShopEditorPro
                 lines.Add("    },");
             }
             lines.Add("}");
-            File.WriteAllLines(path, lines);
+            Categories.Sort((a, b) => a.Order.CompareTo(b.Order));
+            //Msg.Info(path);
+            File.WriteAllLines($"{path}.lua", lines);
             return true;
         }
         private bool SaveClient(string path)
@@ -155,7 +162,8 @@ namespace ShopEditorPro
             var lines = new List<string> { "return {" };
             foreach (var cat in Categories)
             {
-                lines.Add($"  [\"{cat.Name}\"] = {{");
+                lines.Add($"    [{cat.Order}] = {{");
+                lines.Add($"    [\"category\"] = \"{cat.Name}\",");
                 if (cat.IsOutfit)
                 {
                     if (cat.LookIco.HasValue)
@@ -188,10 +196,11 @@ namespace ShopEditorPro
                 lines.Add("  },");
             }
             lines.Add("}");
-            //File.WriteAllLines(path, lines);
+            Categories.Sort((a, b) => a.Order.CompareTo(b.Order));
+            //Msg.Info(path);
+            File.WriteAllLines($"{path}.lua", lines);
             return true;
         }
-
         private void ParseServerLua(string lua)
         {
             var lines = lua.Split('\n');
@@ -202,16 +211,21 @@ namespace ShopEditorPro
                 var line = raw.Trim();
                 if (string.IsNullOrWhiteSpace(line) || line.StartsWith("--")) continue;
 
-                var catMatch = Regex.Match(line, @"^\[\""([^\""]+)\""\]\s*=\s*\{");
+                var catMatch = Regex.Match(line, @"^\[(\d+)\]\s*=\s*\{");
                 if (catMatch.Success)
                 {
                     if (cat != null) Categories.Add(cat);
-                    cat = new ShopCategory { Name = catMatch.Groups[1].Value };
+                    cat = new ShopCategory { Order = int.Parse(catMatch.Groups[1].Value) };
+                    Msg.Log($"{Msg.endl}:::Loaded category:::" + cat.Order);
                     continue;
                 }
-
                 if (cat == null) continue;
 
+                if (line.Contains("category ="))
+                {
+                    var m = Regex.Match(line, @"category\s*=\s*""([^""]+)""");
+                    if (m.Success) cat.Name = m.Groups[1].Value;
+                }
                 if (line.Contains("itemIco ="))
                 {
                     var m = Regex.Match(line, @"itemIco\s*=\s*""([^""]+)""");
