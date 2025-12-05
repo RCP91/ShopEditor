@@ -30,16 +30,9 @@
         {
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(F_Main));
             this.dgv_main = new System.Windows.Forms.DataGridView();
-            this.dgv_cb_category = new System.Windows.Forms.DataGridViewComboBoxColumn();
-            this.dgv_cb_offerType = new System.Windows.Forms.DataGridViewComboBoxColumn();
-            this.dgv_ico_type = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dgv_item_look = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dgv_price = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dgv_count_sex = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dgv_desc = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dgv_title = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.loadFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -65,6 +58,15 @@
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.tb_display = new System.Windows.Forms.TextBox();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
+            this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.dgv_cb_category = new System.Windows.Forms.DataGridViewComboBoxColumn();
+            this.dgv_cb_offerType = new System.Windows.Forms.DataGridViewComboBoxColumn();
+            this.dgv_ico_type = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dgv_item_look = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dgv_price = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dgv_count_sex = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dgv_desc = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dgv_title = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dgv_main)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.pn_config.SuspendLayout();
@@ -73,7 +75,10 @@
             // 
             // dgv_main
             // 
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.Yellow;
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.dgv_main.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
             this.dgv_main.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(25)))));
             this.dgv_main.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
@@ -102,71 +107,15 @@
             dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dgv_main.RowHeadersDefaultCellStyle = dataGridViewCellStyle2;
             this.dgv_main.RowHeadersVisible = false;
+            dataGridViewCellStyle3.BackColor = System.Drawing.Color.DarkSlateGray;
+            dataGridViewCellStyle3.ForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.Color.Black;
+            this.dgv_main.RowsDefaultCellStyle = dataGridViewCellStyle3;
             this.dgv_main.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.dgv_main.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dgv_main.Size = new System.Drawing.Size(842, 270);
             this.dgv_main.TabIndex = 0;
-            // 
-            // dgv_cb_category
-            // 
-            this.dgv_cb_category.HeaderText = "Categories";
-            this.dgv_cb_category.Name = "dgv_cb_category";
-            this.dgv_cb_category.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            this.dgv_cb_category.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            // 
-            // dgv_cb_offerType
-            // 
-            this.dgv_cb_offerType.HeaderText = "Offer Type";
-            this.dgv_cb_offerType.Name = "dgv_cb_offerType";
-            this.dgv_cb_offerType.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            this.dgv_cb_offerType.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            // 
-            // dgv_ico_type
-            // 
-            this.dgv_ico_type.HeaderText = "IcoItem/IcoLook";
-            this.dgv_ico_type.MaxInputLength = 25;
-            this.dgv_ico_type.Name = "dgv_ico_type";
-            this.dgv_ico_type.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            // 
-            // dgv_item_look
-            // 
-            this.dgv_item_look.HeaderText = "Item/Look";
-            this.dgv_item_look.MaxInputLength = 25;
-            this.dgv_item_look.Name = "dgv_item_look";
-            this.dgv_item_look.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            // 
-            // dgv_price
-            // 
-            this.dgv_price.HeaderText = "Price";
-            this.dgv_price.MaxInputLength = 11;
-            this.dgv_price.Name = "dgv_price";
-            this.dgv_price.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            this.dgv_price.ToolTipText = "1";
-            this.dgv_price.Width = 60;
-            // 
-            // dgv_count_sex
-            // 
-            this.dgv_count_sex.HeaderText = "Count/Sex";
-            this.dgv_count_sex.MaxInputLength = 11;
-            this.dgv_count_sex.Name = "dgv_count_sex";
-            this.dgv_count_sex.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            this.dgv_count_sex.Width = 60;
-            // 
-            // dgv_desc
-            // 
-            this.dgv_desc.HeaderText = "Description";
-            this.dgv_desc.MaxInputLength = 50;
-            this.dgv_desc.Name = "dgv_desc";
-            this.dgv_desc.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            this.dgv_desc.Width = 160;
-            // 
-            // dgv_title
-            // 
-            this.dgv_title.HeaderText = "Title";
-            this.dgv_title.MaxInputLength = 25;
-            this.dgv_title.Name = "dgv_title";
-            this.dgv_title.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            this.dgv_title.Width = 160;
             // 
             // menuStrip1
             // 
@@ -230,19 +179,19 @@
             // 
             // pn_config
             // 
-            this.pn_config.BackColor = System.Drawing.Color.Gray;
+            this.pn_config.BackColor = System.Drawing.Color.DarkGray;
             this.pn_config.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.pn_config.Controls.Add(this.panel1);
             this.pn_config.Location = new System.Drawing.Point(24, 30);
             this.pn_config.Name = "pn_config";
-            this.pn_config.Size = new System.Drawing.Size(353, 256);
+            this.pn_config.Size = new System.Drawing.Size(353, 267);
             this.pn_config.TabIndex = 2;
             this.pn_config.Visible = false;
             this.pn_config.MouseLeave += new System.EventHandler(this.pn_config_MouseLeave);
             // 
             // panel1
             // 
-            this.panel1.BackColor = System.Drawing.Color.DarkGray;
+            this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(25)))), ((int)(((byte)(25)))));
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.panel1.Controls.Add(this.label4);
             this.panel1.Controls.Add(this.tb_pathItemServer);
@@ -259,12 +208,13 @@
             this.panel1.Location = new System.Drawing.Point(10, 10);
             this.panel1.Margin = new System.Windows.Forms.Padding(10);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(331, 234);
+            this.panel1.Size = new System.Drawing.Size(331, 245);
             this.panel1.TabIndex = 4;
             // 
             // label4
             // 
             this.label4.AutoSize = true;
+            this.label4.ForeColor = System.Drawing.SystemColors.ButtonFace;
             this.label4.Location = new System.Drawing.Point(12, 113);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(111, 13);
@@ -292,6 +242,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
+            this.label3.ForeColor = System.Drawing.SystemColors.ButtonFace;
             this.label3.Location = new System.Drawing.Point(12, 191);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(211, 13);
@@ -311,6 +262,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
+            this.label2.ForeColor = System.Drawing.SystemColors.ButtonFace;
             this.label2.Location = new System.Drawing.Point(12, 152);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(200, 13);
@@ -320,7 +272,8 @@
             // cb_autoLoad
             // 
             this.cb_autoLoad.AutoSize = true;
-            this.cb_autoLoad.Location = new System.Drawing.Point(186, 61);
+            this.cb_autoLoad.ForeColor = System.Drawing.SystemColors.ButtonFace;
+            this.cb_autoLoad.Location = new System.Drawing.Point(186, 62);
             this.cb_autoLoad.Name = "cb_autoLoad";
             this.cb_autoLoad.Size = new System.Drawing.Size(117, 17);
             this.cb_autoLoad.TabIndex = 5;
@@ -331,6 +284,7 @@
             // cb_autoSave
             // 
             this.cb_autoSave.AutoSize = true;
+            this.cb_autoSave.ForeColor = System.Drawing.SystemColors.ButtonFace;
             this.cb_autoSave.Location = new System.Drawing.Point(186, 29);
             this.cb_autoSave.Name = "cb_autoSave";
             this.cb_autoSave.Size = new System.Drawing.Size(76, 17);
@@ -372,6 +326,7 @@
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.ForeColor = System.Drawing.SystemColors.ButtonFace;
             this.label1.Location = new System.Drawing.Point(12, 11);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(67, 13);
@@ -386,15 +341,91 @@
             // tb_display
             // 
             this.tb_display.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(25)))));
-            this.tb_display.Font = new System.Drawing.Font("Javanese Text", 12F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tb_display.Font = new System.Drawing.Font("SimSun", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tb_display.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
             this.tb_display.Location = new System.Drawing.Point(19, 320);
             this.tb_display.Multiline = true;
             this.tb_display.Name = "tb_display";
             this.tb_display.ReadOnly = true;
             this.tb_display.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.tb_display.Size = new System.Drawing.Size(358, 129);
+            this.tb_display.Size = new System.Drawing.Size(429, 129);
             this.tb_display.TabIndex = 3;
+            // 
+            // progressBar1
+            // 
+            this.progressBar1.BackColor = System.Drawing.Color.Cyan;
+            this.progressBar1.Cursor = System.Windows.Forms.Cursors.AppStarting;
+            this.progressBar1.ForeColor = System.Drawing.Color.Cyan;
+            this.progressBar1.Location = new System.Drawing.Point(24, 435);
+            this.progressBar1.Margin = new System.Windows.Forms.Padding(5);
+            this.progressBar1.Name = "progressBar1";
+            this.progressBar1.Size = new System.Drawing.Size(402, 10);
+            this.progressBar1.TabIndex = 4;
+            // 
+            // dgv_cb_category
+            // 
+            this.dgv_cb_category.HeaderText = "Categories";
+            this.dgv_cb_category.Name = "dgv_cb_category";
+            this.dgv_cb_category.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            // 
+            // dgv_cb_offerType
+            // 
+            this.dgv_cb_offerType.HeaderText = "Offer Type";
+            this.dgv_cb_offerType.Name = "dgv_cb_offerType";
+            this.dgv_cb_offerType.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            // 
+            // dgv_ico_type
+            // 
+            this.dgv_ico_type.HeaderText = "IcoItem/IcoLook";
+            this.dgv_ico_type.MaxInputLength = 25;
+            this.dgv_ico_type.Name = "dgv_ico_type";
+            this.dgv_ico_type.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            this.dgv_ico_type.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
+            // dgv_item_look
+            // 
+            this.dgv_item_look.HeaderText = "Item/Look";
+            this.dgv_item_look.MaxInputLength = 25;
+            this.dgv_item_look.Name = "dgv_item_look";
+            this.dgv_item_look.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            this.dgv_item_look.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
+            // dgv_price
+            // 
+            this.dgv_price.HeaderText = "Price";
+            this.dgv_price.MaxInputLength = 11;
+            this.dgv_price.Name = "dgv_price";
+            this.dgv_price.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            this.dgv_price.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.dgv_price.ToolTipText = "1";
+            this.dgv_price.Width = 60;
+            // 
+            // dgv_count_sex
+            // 
+            this.dgv_count_sex.HeaderText = "Count/Sex";
+            this.dgv_count_sex.MaxInputLength = 11;
+            this.dgv_count_sex.Name = "dgv_count_sex";
+            this.dgv_count_sex.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            this.dgv_count_sex.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.dgv_count_sex.Width = 60;
+            // 
+            // dgv_desc
+            // 
+            this.dgv_desc.HeaderText = "Description";
+            this.dgv_desc.MaxInputLength = 50;
+            this.dgv_desc.Name = "dgv_desc";
+            this.dgv_desc.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            this.dgv_desc.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.dgv_desc.Width = 160;
+            // 
+            // dgv_title
+            // 
+            this.dgv_title.HeaderText = "Title";
+            this.dgv_title.MaxInputLength = 25;
+            this.dgv_title.Name = "dgv_title";
+            this.dgv_title.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            this.dgv_title.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.dgv_title.Width = 160;
             // 
             // F_Main
             // 
@@ -402,6 +433,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(880, 461);
+            this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.pn_config);
             this.Controls.Add(this.dgv_main);
             this.Controls.Add(this.tb_display);
@@ -449,6 +481,8 @@
         private System.Windows.Forms.TextBox tb_pathItemServer;
         private System.Windows.Forms.Label label4;
         public System.Windows.Forms.TextBox tb_display;
+        private System.Windows.Forms.SaveFileDialog saveFileDialog1;
+        private System.Windows.Forms.ProgressBar progressBar1;
         private System.Windows.Forms.DataGridViewComboBoxColumn dgv_cb_category;
         private System.Windows.Forms.DataGridViewComboBoxColumn dgv_cb_offerType;
         private System.Windows.Forms.DataGridViewTextBoxColumn dgv_ico_type;
@@ -457,7 +491,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn dgv_count_sex;
         private System.Windows.Forms.DataGridViewTextBoxColumn dgv_desc;
         private System.Windows.Forms.DataGridViewTextBoxColumn dgv_title;
-        private System.Windows.Forms.SaveFileDialog saveFileDialog1;
     }
 }
 
