@@ -116,22 +116,22 @@ namespace ShopEditorPro
             clientPath = (clientPath != string.Empty) ? clientPath : Config.Current.ClientFilePath;
 
             ResolveItemId();
-            SaveServer(serverPath);
-            SaveClient(clientPath);
+            SaveShopServer(serverPath);
+            SaveShopClient(clientPath);
             return true;
         }
-        private bool SaveServer(string path)
+        private bool SaveShopServer(string path)
         {
             var lines = new List<string> { "return {" };
-            foreach (var cat in Categories)
+            foreach (var c in Categories)
             {
-                lines.Add($"    [{cat.Order}] = {{");
-                lines.Add($"        category = \"{cat.Name}\",");
-                if (cat.IsOutfit)
+                lines.Add($"    [{c.Order}] = {{");
+                lines.Add($"        category = \"{c.Name}\",");
+                if (c.IsOutfit)
                 {
-                    if (cat.LookIco.HasValue) lines.Add($"        lookIco = {cat.LookIco.Value},");
+                    if (c.LookIco.HasValue) lines.Add($"        lookIco = {c.LookIco.Value},");
                     lines.Add("        outfits = {");
-                    foreach (var o in cat.Outfits)
+                    foreach (var o in c.Outfits)
                     {
                         var sex = o.Sex.HasValue ? $", sex = {o.Sex.Value}" : "";
                         lines.Add($"            {{ lookType = {o.LookType}{sex}, price = {o.Price}, title = \"{Escape(o.Title)}\" }},");
@@ -140,10 +140,10 @@ namespace ShopEditorPro
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(cat.IconItemName))
-                        lines.Add($"        itemIco = \"{cat.IconItemName}\",");
+                    if (!string.IsNullOrEmpty(c.IconItemName))
+                        lines.Add($"        itemIco = \"{c.IconItemName}\",");
                     lines.Add("        items = {");
-                    foreach (var item in cat.Items)
+                    foreach (var item in c .Items)
                     {
                         lines.Add($"            {{ item = \"{item.Name}\", count = {item.Count}, price = {item.Price}, desc = \"{Escape(item.Desc)}\" }},");
                     }
@@ -157,19 +157,19 @@ namespace ShopEditorPro
             File.WriteAllLines($"{path}.lua", lines);
             return true;
         }
-        private bool SaveClient(string path)
+        private bool SaveShopClient(string path)
         {
             var lines = new List<string> { "return {" };
-            foreach (var cat in Categories)
+            foreach (var c in Categories)
             {
-                lines.Add($"    [{cat.Order}] = {{");
-                lines.Add($"    [\"category\"] = \"{cat.Name}\",");
-                if (cat.IsOutfit)
+                lines.Add($"    [{c.Order}] = {{");
+                lines.Add($"    [\"category\"] = \"{c.Name}\",");
+                if (c.IsOutfit)
                 {
-                    if (cat.LookIco.HasValue)
-                        lines.Add($"    [\"lookIco\"] = {cat.LookIco.Value},");
+                    if (c.LookIco.HasValue)
+                        lines.Add($"    [\"lookIco\"] = {c.LookIco.Value},");
                     lines.Add("    [\"outfits\"] = {");
-                    foreach (var o in cat.Outfits)
+                    foreach (var o in c.Outfits)
                     {
                         var sexLine = o.Sex.HasValue ? $"[\"sex\"] = {o.Sex.Value},\n        " : "";
                         lines.Add($"      [{o.LookType}] = {{ {sexLine}[\"title\"] = \"{Escape(o.Title)}\", [\"price\"] = {o.Price} }},");
@@ -178,10 +178,10 @@ namespace ShopEditorPro
                 }
                 else
                 {
-                    lines.Add($"    [\"itemIco\"] = {cat.IconItemId},");
+                    lines.Add($"    [\"itemIco\"] = {c.IconItemId},");
                     lines.Add("    [\"items\"] = {");
                     int index = 1;
-                    foreach (var item in cat.Items)
+                    foreach (var item in c.Items)
                     {
                         lines.Add($"      [{index++}] = {{");
                         lines.Add($"        [\"desc\"] = \"{Escape(item.Desc)}\",");
@@ -204,7 +204,7 @@ namespace ShopEditorPro
         private void ParseServerLua(string lua)
         {
             var lines = lua.Split('\n');
-            ShopCategory cat = null;
+            ShopCategory c = null;
 
             foreach (var raw in lines)
             {
@@ -214,27 +214,27 @@ namespace ShopEditorPro
                 var catMatch = Regex.Match(line, @"^\[(\d+)\]\s*=\s*\{");
                 if (catMatch.Success)
                 {
-                    if (cat != null) Categories.Add(cat);
-                    cat = new ShopCategory { Order = int.Parse(catMatch.Groups[1].Value) };
-                    Msg.Log($"{Msg.endl}:::Loaded category:::" + cat.Order);
+                    if (c != null) Categories.Add(c);
+                    c = new ShopCategory { Order = int.Parse(catMatch.Groups[1].Value) };
+                    Msg.Log($"{Msg.endl}:::Loaded category:::" + c.Order);
                     continue;
                 }
-                if (cat == null) continue;
+                if (c == null) continue;
 
                 if (line.Contains("category ="))
                 {
                     var m = Regex.Match(line, @"category\s*=\s*""([^""]+)""");
-                    if (m.Success) cat.Name = m.Groups[1].Value;
+                    if (m.Success) c.Name = m.Groups[1].Value;
                 }
                 if (line.Contains("itemIco ="))
                 {
                     var m = Regex.Match(line, @"itemIco\s*=\s*""([^""]+)""");
-                    if (m.Success) cat.IconItemName = m.Groups[1].Value;
+                    if (m.Success) c.IconItemName = m.Groups[1].Value;
                 }
                 if (line.Contains("lookIco ="))
                 {
                     var m = Regex.Match(line, @"lookIco\s*=\s*(\d+)");
-                    if (m.Success) cat.LookIco = int.Parse(m.Groups[1].Value);
+                    if (m.Success) c.LookIco = int.Parse(m.Groups[1].Value);
                 }
 
                 if (line.Contains("item = \"") && line.Contains("{"))
@@ -246,7 +246,7 @@ namespace ShopEditorPro
                         Price = GetInt(line, "price", 0),
                         Desc = GetString(line, "desc")
                     };
-                    cat.Items.Add(item);
+                    c.Items.Add(item);
                 }
 
                 if (line.Contains("lookType ="))
@@ -258,10 +258,10 @@ namespace ShopEditorPro
                         Price = GetInt(line, "price", 0),
                         Title = GetString(line, "title")
                     };
-                    cat.Outfits.Add(o);
+                    c.Outfits.Add(o);
                 }
             }
-            if (cat != null) Categories.Add(cat);
+            if (c != null) Categories.Add(c);
         }
         private string GetString(string line, string key)
         {
