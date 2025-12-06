@@ -165,6 +165,7 @@ namespace ShopEditor
                 .GroupBy(r => new
                 {
                     Category = r.Cells["dgv_cb_category"].Value?.ToString(),
+                    CategoryIco = r.Cells["dgv_ico_type"].Value,
                     OfferType = r.Cells["dgv_cb_offerType"].Value?.ToString()?.ToLower()
                 });
 
@@ -182,9 +183,9 @@ namespace ShopEditor
 
                 if (isOutfit)
                 {
+                    category.LookIco = (int)group.Key.CategoryIco;
                     foreach (var row in group)
                     {
-                        category.LookIco = Convert.ToUInt16(row.Cells["dgv_ico_type"].Value);
                         var outfit = new ShopOutfit
                         {
                             LookType = Convert.ToInt32(row.Cells["dgv_item_look"].Value),
@@ -198,8 +199,7 @@ namespace ShopEditor
                 }
                 else if (!isOutfit)
                 {
-                    category.IconItemName = dgv_ico_type.ToString();
-
+                    category.IconItemName = group.Key.CategoryIco.ToString().ToLower();
                     foreach (var row in group)
                     {
                         var item = new ShopItem
