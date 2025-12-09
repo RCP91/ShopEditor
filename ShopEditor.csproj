@@ -27,7 +27,7 @@
     <PublisherName>Dev RCP.91 %28Roberto Carlos Preguica%29</PublisherName>
     <SuiteName>Shop Items Editor</SuiteName>
     <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>5</ApplicationRevision>
+    <ApplicationRevision>6</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
