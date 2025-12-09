@@ -19,8 +19,7 @@ namespace ShopEditor
             [JsonProperty] public bool AutoSave { get; set; } = false;
             [JsonProperty] public bool AutoLoadLastFile { get; set; } = false;
 
-            [JsonProperty] public List<string> OfferTypeList { get; set; }
-            [JsonProperty] public string SelectedOfferType { get; set; } = "Items";
+            [JsonProperty] public List<string> CategoryList { get; set; }
         }
         public static AppSettings Current { get; private set; } = new AppSettings();
         public static void Load()
