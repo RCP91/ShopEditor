@@ -8,7 +8,6 @@
  */
 
 using Newtonsoft.Json.Linq;
-using ShopEditorPro;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,6 +15,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -25,8 +25,9 @@ namespace ShopEditor
 {
     public partial class F_Main : Form
     {
-        List<string> offerTypes = new List<string>();
-        ShopEditorPro.ShopEditorPro shopEditor = new ShopEditorPro.ShopEditorPro();
+        public List<string> categoryTypes = new List<string>();
+        public List<string> offerTypes = new List<string>();
+        ShopManager shopEditor;
 
         public static F_Main Instance;
         public F_Main()
@@ -35,50 +36,40 @@ namespace ShopEditor
             InitializeComponent();
             Instance = this;
 
-            shopEditor = new ShopEditorPro.ShopEditorPro();
+            shopEditor = new ShopManager();
 
+            progressBar1.Visible = false;
             tb_pathServer.Text = Config.Current.ServerFilePath;
             tb_pathClient.Text = Config.Current.ClientFilePath;
             tb_pathItemServer.Text = Config.Current.PathItemServer;
-
-            offerTypes = new List<string>(Config.Current.OfferTypeList ?? new List<string> { "Item", "Outfit" });
-            cb_offerType.Items.Clear();
-            cb_offerType.Items.AddRange(offerTypes.ToArray());
-            dgv_load();
-
-            if (!File.Exists(Config.Current.PathItemServer))
-            {
-                Msg.Error("items.srv file not found! Please configure the correct path in the configuration menu.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
             LoadShopItemsServer();
+
         }
         async void LoadShopItemsServer(bool force = false)
         {
             tb_display.Text = "";
-            Msg.Log($":: Loading items.srv!");
-
             await RunProgress(progressBar1);
-            if (!force)
+            if (!force || shopEditor.ItemNameToId == null)
             {
+                if (tb_pathItemServer.Text == string.Empty) return;
+
+                Msg.Log($":: Loading items.srv!");
                 shopEditor.LoadItemServer(tb_pathItemServer.Text);
             }
-
             if (Config.Current.AutoLoadLastFile || force)
             {
-                Msg.Log($":: Loading shop items!");
-                string path = (force) ? tb_pathServer.Text : Config.Current.ServerFilePath;
-                shopEditor.LoadShopServer(path);
-
-                dgv_load();
-
-                foreach (var item in shopEditor.Categories.ToList())
+                if (!File.Exists(Config.Current.PathItemServer))
                 {
-                    foreach (var outfit in item.Outfits)
-                        Msg.Log($"::: {outfit.Title}::Type:{outfit.LookType}");
-
-                    foreach (var it in item.Items)
-                        Msg.Log($"::: {it.Name}::ID: {it.ItemId}");
+                    Msg.Error("items.srv file not found! Please configure the correct path in the configuration menu.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
+
+                string path = (force) ? tb_pathServer.Text : Config.Current.ServerFilePath;
+                if (path != string.Empty) {
+                    Msg.Log($":: Loading shop items!");
+                    shopEditor.LoadShopServer(path);
+                }
+                dgv_load();
             }
         }
         public async Task RunProgress(System.Windows.Forms.ProgressBar bar)
@@ -97,7 +88,7 @@ namespace ShopEditor
                 }
             }
 
-            var t = new Timer { Interval = 1500 };
+            var t = new Timer { Interval = 750 };
             t.Tick += (_, __) =>
             {
                 bar.Visible = false;
@@ -112,113 +103,136 @@ namespace ShopEditor
 
             if (shopEditor?.Categories == null) return;
 
-            //(dgv_main.Columns["dgv_cb_category"] as DataGridViewComboBoxColumn).Items.Clear();
-            var categoryNames = shopEditor.Categories.Select(c => c.Name).ToArray();
-            (dgv_main.Columns["dgv_cb_category"] as DataGridViewComboBoxColumn).Items.AddRange(categoryNames);
-
-            //(dgv_main.Columns["dgv_cb_offerType"] as DataGridViewComboBoxColumn).Items.Clear();
-            (dgv_main.Columns["dgv_cb_offerType"] as DataGridViewComboBoxColumn).Items.AddRange(offerTypes.ToArray());
-
+            (dgv_main.Columns["dgv_cb_category"] as DataGridViewComboBoxColumn).Items.AddRange(categoryTypes.ToArray());
+            //(dgv_main.Columns["dgv_cb_offerType"] as DataGridViewComboBoxColumn).Items.AddRange(offerTypes.ToArray());
 
             foreach (var cat in shopEditor.Categories)
             {
-                if (cat.IsOutfit)
+                foreach (var offer in cat.Offers)
                 {
-                    foreach (var outfit in cat.Outfits)
-                    {
-                        dgv_main.Rows.Add(
-                            cat.Name,
-                            "outfits",
-                            cat.LookIco,
-                            outfit.LookType,
-                            outfit.Price,
-                            outfit.Sex.HasValue ? (outfit.Sex == 0 ? "Female" : "Male") : "Both",
-                            "",
-                            outfit.Title ?? ""
-                        );
-                    }
-                }
-                else if (cat.Items.Count > 0)
-                {
-                    foreach (var item in cat.Items)
-                    {
-                        dgv_main.Rows.Add(
-                            cat.Name,
-                            "items",
-                            cat.IconItemName,
-                            item.Name,
-                            item.Price,
-                            item.Count,
-                            item.Desc ?? "",
-                            ""
-                        );
-                    }
+                    //var items = shopEditor.ItemNameToId.FirstOrDefault(f => f.Value.ToString() == ).Key;
+                    dgv_main.Rows.Add(
+                        cat.CategoryName,
+                        cat.CategoryIcoName ?? cat.CategoryIcoId.ToString(),
+                        (offer.LookType > 0) ? offer.LookType.ToString() : offer.Names,
+                        offer.Price,
+                        offer.Sex.HasValue ? (offer.Sex == 0 ? "Female" : "Male") : (offer.LookType > 0 ? "" : offer.Count.ToString()),
+                        offer.Desc ?? "",
+                        offer.Title ?? ""
+                    );
                 }
             }
         }
-        void SaveDgvToShopEditor()
+        private void SaveDgvToShopEditor()
         {
             shopEditor.Categories.Clear();
-            var grouped = dgv_main.Rows
+
+            var rows = dgv_main.Rows
                 .Cast<DataGridViewRow>()
                 .Where(r => !r.IsNewRow && r.Cells["dgv_cb_category"].Value != null)
-                .GroupBy(r => new
-                {
-                    Category = r.Cells["dgv_cb_category"].Value?.ToString(),
-                    CategoryIco = r.Cells["dgv_ico_type"].Value,
-                    OfferType = r.Cells["dgv_cb_offerType"].Value?.ToString()?.ToLower()
-                });
+                .ToList();
 
-            foreach (var group in grouped)
+            if (!rows.Any()) return;
+
+            var grouped = rows.GroupBy(r => new
             {
-                string catName = group.Key.Category;
-                bool isOutfit = group.Key.OfferType == "outfits";
+                Category = r.Cells["dgv_cb_category"].Value?.ToString() ?? "Unknown",
+                Ico = r.Cells["dgv_ico_type"].Value?.ToString() ?? ""
+            });
 
-                var category = new ShopCategory
+            int order = 1;
+            foreach (var g in grouped)
+            {
+                var category = new Category
                 {
-                    Order = shopEditor.Categories.Count + 1,
-                    Name = catName,
-                    //IsOutfit = isOutfit
+                    Order = order++,
+                    CategoryName = g.Key.Category,
+                    CategoryIcoName = g.Key.Ico
                 };
 
-                if (isOutfit)
-                {
-                    category.LookIco = (int)group.Key.CategoryIco;
-                    foreach (var row in group)
-                    {
-                        var outfit = new ShopOutfit
-                        {
-                            LookType = Convert.ToInt32(row.Cells["dgv_item_look"].Value),
-                            Price = Convert.ToInt32(row.Cells["dgv_price"].Value),
-                            Title = row.Cells["dgv_title"].Value?.ToString() ?? ""
-                        };
-                        string sexStr = row.Cells["dgv_count_sex"].Value?.ToString()?.ToLower();
-                        outfit.Sex = (sexStr == "female") ? 0 : ((sexStr == "male") ? 1 : outfit.Sex = null);
-                        category.Outfits.Add(outfit);
-                    }
-                }
-                else if (!isOutfit)
-                {
-                    category.IconItemName = group.Key.CategoryIco.ToString().ToLower();
-                    foreach (var row in group)
-                    {
-                        var item = new ShopItem
-                        {
-                            Name = row.Cells["dgv_item_look"].Value?.ToString() ?? "unknown",
-                            Price = Convert.ToInt32(row.Cells["dgv_price"].Value),
-                            Count = Convert.ToInt32(row.Cells["dgv_count_sex"].Value),
-                            Desc = row.Cells["dgv_desc"].Value?.ToString() ?? ""
-                        };
+                var icoItem = shopEditor.ItemNameToId.FirstOrDefault(r =>
+                    r.Key.Equals(g.Key.Ico, StringComparison.OrdinalIgnoreCase));
 
-                        if (shopEditor.ItemNameToId.TryGetValue(item.Name, out int id))
-                            item.ItemId = id;
-
-                        category.Items.Add(item);
-                    }
+                if (icoItem.Key != null)
+                {
+                    category.CategoryIcoId = icoItem.Value;
                 }
+                else
+                {
+                    category.CategoryIcoId = (int)Convert.ToInt16(g.Key.Ico);
+                }
+
+                foreach (var row in g)
+                {
+                    var itemLook = row.Cells["dgv_item_look"].Value?.ToString() ?? "";
+                    var countSexValue = row.Cells["dgv_count_sex"].Value?.ToString() ?? "";
+                    var price = Convert.ToInt32(row.Cells["dgv_price"].Value ?? 0);
+                    var desc = row.Cells["dgv_desc"].Value?.ToString() ?? "";
+                    var title = row.Cells["dgv_title"].Value?.ToString() ?? "";
+
+                    bool isOutfit = int.TryParse(itemLook, out int lookTypeValue) && lookTypeValue > 0;
+
+                    var offer = new Offers();
+
+                    if (isOutfit)
+                    {
+                        offer.LookType = lookTypeValue;
+                        offer.Title = title;
+                        offer.Price = price;
+
+                        if (!string.IsNullOrEmpty(countSexValue))
+                        {
+                            switch (countSexValue.ToLower())
+                            {
+                                case "female":
+                                case "0":
+                                    offer.Sex = 0;
+                                    break;
+                                case "male":
+                                case "1":
+                                    offer.Sex = 1;
+                                    break;
+                                default:
+                                    offer.Sex = null;
+                                    break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        offer.Names = itemLook;
+                        offer.Price = price;
+                        offer.Desc = desc;
+
+                        if (int.TryParse(countSexValue, out int countValue))
+                        {
+                            offer.Count = countValue;
+                        }
+                        else
+                        {
+                            offer.Count = 1;
+                        }
+
+                        var foundItem = shopEditor.ItemNameToId.FirstOrDefault(r =>
+                            r.Key.Equals(itemLook, StringComparison.OrdinalIgnoreCase));
+
+                        if (foundItem.Key != null)
+                        {
+                            offer.ItemId = foundItem.Value;
+                        }
+                        else
+                        {
+                            Msg.Warning($"Item '{itemLook}' not found in items.srv!");
+                        }
+                    }
+
+                    category.Offers.Add(offer);
+                }
+
                 shopEditor.Categories.Add(category);
             }
-            shopEditor.ResolveItemId();
+
+            shopEditor.Categories.Sort((a, b) => a.Order.CompareTo(b.Order));
         }
         private void dgv_main_MouseLeave(object sender, EventArgs e)
         {
@@ -226,7 +240,7 @@ namespace ShopEditor
             {
                 if (cb_autoSave.Checked)
                 {
-                    SaveDgvToShopEditor();
+                    //SaveDgvToShopEditor();
                 }
             }
         }
@@ -250,34 +264,41 @@ namespace ShopEditor
                     cfg.PathItemServer = tb_pathItemServer.Text;
                     cfg.AutoLoadLastFile = cb_autoLoad.Checked;
                     cfg.AutoSave = cb_autoSave.Checked;
-                    cfg.OfferTypeList = offerTypes;
+                    cfg.CategoryList = categoryTypes;
                 });
             }
         }
         private void btn_add_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(cb_offerType.Text))
+            if (cb_category.Text != string.Empty)
             {
-                Msg.Warning("Offer type cannot be empty!", "Refused!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                return;
-            }
-            if (offerTypes.Contains(cb_offerType.Text))
-            {
-                Msg.Warning("Offer type already exists!", "Refused!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                return;
+                if (string.IsNullOrWhiteSpace(cb_category.Text))
+                {
+                    Msg.Warning("Category type cannot be space!", "Refused!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    return;
+                }
+                if (categoryTypes.Contains(cb_category.Text))
+                {
+                    Msg.Warning("Category type already exists!", "Refused!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    return;
+                }
+
+                categoryTypes.Add(cb_category.Text.ToLower());
+                cb_category.Items.Clear();
+                cb_category.Items.AddRange(categoryTypes.ToArray());
+                cb_category.Text = "";
             }
 
-            offerTypes.Add(cb_offerType.Text);
-            cb_offerType.Items.Clear();
-            cb_offerType.Items.AddRange(offerTypes.ToArray());
-            cb_offerType.Text = "";
         }
         private void btn_remove_Click(object sender, EventArgs e)
         {
-            offerTypes.Remove(cb_offerType.SelectedItem.ToString());
-            cb_offerType.Items.Clear();
-            cb_offerType.Items.AddRange(offerTypes.ToArray());
-            cb_offerType.Text = "";
+            if (cb_category.SelectedItem != null)
+            {
+                categoryTypes.Remove(cb_category.SelectedItem.ToString());
+                cb_category.Items.Clear();
+                cb_category.Items.AddRange(categoryTypes.ToArray());
+                cb_category.Text = "";
+            }
         }
         private void cb_autoSave_CheckedChanged(object sender, EventArgs e)
         {
